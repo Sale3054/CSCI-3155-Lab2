@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Principles and Practice in Programming Languages
 
 # Lab 2
@@ -9,3 +10,6 @@ Refer to the lab handouts for details about each assignment. This file provides 
 ## Integrity of the Course Materials
 
 The development effort in the course materials, including these lab assignments, the exercises, and the exams, is significant. You agree that you will not share any course materials publicly. The course materials, include your or anyone else's solutions to the lab assignments, exercises, and exams. In particular, you agree not to post your solutions to the lab assignments in a public source code repository, such as public Github repositories. Please use private source code repositories for your work.
+=======
+CSCI 3155 Lab2
+>>>>>>> 2774a8e6b2ba961ba020daf572a8b3e9c8f9500e
