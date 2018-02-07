@@ -8,7 +8,7 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
 
   /*
    * CSCI 3155: Lab 2
-   * <Your Name>
+   * Samuel Leon
    * 
    * Partner: <Your Partner's Name>
    * Collaborators: <Any Collaborators>
@@ -62,6 +62,11 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     require(isValue(v))
     (v: @unchecked) match {
       case N(n) => n
+      case Undefined => Double.NaN
+      case null => +0
+      case B(true) => 1
+      case B(false) => 0
+      case S(s) => s.toDouble
       case _ => ???
     }
   }
@@ -70,6 +75,16 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     require(isValue(v))
     (v: @unchecked) match {
       case B(b) => b
+      case Undefined => false
+      case null => false
+      case N(n) => n match {
+        case 0 => false
+        case -0 => false
+        case 0.0 => false
+        case -0.0 => false
+        case x if x.isNaN => false
+        case _ => true
+      }
       case _ => ???
     }
   }
@@ -79,6 +94,17 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     (v: @unchecked) match {
       case S(s) => s
       case Undefined => "undefined"
+      case null => "null"
+      case N(n) => n match {
+        case n if n.isNaN => "NaN"
+        case 0 => "0"
+        case -0 => "0"
+        case 0.0 => "0"
+        case -0.0 => "0"
+        case n if n.isInfinity => "Infinity"
+        case n if n < 0 => "-" + n.toString
+        case n => n.toString
+      }
       case _ => ???
     }
   }
@@ -86,10 +112,27 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
   def eval(env: Env, e: Expr): Expr = {
     e match {
       /* Base Cases */
+      //Returns standalone values that do not require evaluation
+      case N(n) => N(n)
+      case B(b) => B(b)
+      case Undefined => Undefined
+      case S(s) => S(s)
 
       /* Inductive Cases */
       case Print(e1) => println(pretty(eval(env, e1))); Undefined
 
+      //Handles Unary operators
+      case Unary(uop, e1) => uop match{
+        case Neg => N(-toNumber(eval(env, e1)))
+        case Not => B(!toBoolean(eval(env, e1)))
+      }
+      case Binary(bop, e1, e2) => bop match{
+        case Plus => (eval(env, e1), eval(env, e2)) match
+        {
+          case _ => ???
+        }
+
+      }
       case _ => ???
     }
   }
