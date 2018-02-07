@@ -129,6 +129,7 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
       case Binary(bop, e1, e2) => bop match{
         case Plus => (eval(env, e1), eval(env, e2)) match
         {
+          case (S(s), s2) => (s + s2.toStr)
           case _ => ???
         }
 
