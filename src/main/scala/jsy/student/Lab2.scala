@@ -122,16 +122,97 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
       case Print(e1) => println(pretty(eval(env, e1))); Undefined
 
       //Handles Unary operators
+        /* Unary Operators */
       case Unary(uop, e1) => uop match{
         case Neg => N(-toNumber(eval(env, e1)))
         case Not => B(!toBoolean(eval(env, e1)))
       }
+        /* Binary Operators */
       case Binary(bop, e1, e2) => bop match{
         case Plus => (eval(env, e1), eval(env, e2)) match
         {
-          case (S(s), s2) => (s + s2.toStr)
+
+          case (N(lref), N(rref)) => N(lref + rref)
+          case (S(lref), rref) => S(lref + toStr(rref))
+          case (lref, S(rref)) => S(toStr(lref) + rref)
+          case (S(lref), S(rref)) => S(lref + rref)
+          case (lref, rref) => N(toNumber(lref) + toNumber(rref))
+          case _ => throw new UnsupportedOperationException("Uncaught operation exception in: Plus()")
+        }
+        case Minus => (eval(env, e1), eval(env, e2)) match
+        {
+          case (N(lref), N(rref)) => N(lref - rref)
+          case (S(lref), rref) => N(Double.NaN)
+          case (lref, S(rref)) => N(Double.NaN)
+          case (lref, rref) => N(toNumber(lref) - toNumber(rref))
+          case _ => throw new UnsupportedOperationException("Uncaught operation exception in: Minus()")
+        }
+        case Times => (eval(env, e1), eval(env, e2)) match
+        {
+          case (N(lref), N(rref)) => N(lref * rref)
+          case (N(lref), rref) => N(lref * toNumber(rref))
+          case (lref, N(rref)) => N(toNumber(lref) * rref)
+          case (lref, rref) => N(toNumber(lref) * toNumber(rref))
+          case _ => throw new UnsupportedOperationException("Uncaught operation exception in: Times()")
+        }
+        case Div => (eval(env, e1), eval(env, e2)) match
+        {
+          case (N(lref), N(rref)) => N(lref / rref)
+          case (lref, rref) => N(toNumber(lref) / toNumber(rref))
           case _ => ???
         }
+
+        case Eq => (eval(env, e1), eval(env, e2)) match
+        {
+          case (N(lref), N(rref)) => B(lref == rref)
+          case (N(lref), rref) => B(lref == toNumber(rref))
+          case (lref, N(rref)) => B(toNumber(lref) == rref)
+          case (B(lref), B(rref)) => B(lref == rref)
+          case (B(lref), rref) => B(lref == toBoolean(rref))
+          case (lref, B(rref)) => B(toBoolean(lref) == rref)
+          case (lref, rref) => B(toBoolean(lref) == toBoolean(rref))
+          case _ => ???
+        }
+        case Ne => (eval(env, e1), eval(env, e2)) match
+        {
+          case (lref, rref) => eval(env, Unary(Not, Binary(Eq, lref, rref)))
+        }
+        case Lt => (eval(env, e1), eval(env, e2)) match
+        {
+          case (N(lref), N(rref)) => B(lref < rref)
+          case (N(lref), rref) => B(lref < toNumber(rref))
+          case (lref, N(rref)) => B(toNumber(lref) < rref)
+          case (lref, rref) => B(toNumber(lref) < toNumber(rref))
+
+          case _ => ???
+        }
+        case Gt => (eval(env, e1), eval(env, e2)) match
+        {
+          case (lref, rref) => B(toBoolean(eval(env, Unary(Not, Binary(Lt, lref, rref)))) && toBoolean(eval(env, Unary(Not, Binary(Eq, lref, rref)))))
+          case _ => ???
+        }
+        case Le => (eval(env, e1), eval(env, e2)) match
+        {
+          case (lref, rref) => B(toBoolean(eval(env, Binary(Lt, lref, rref))) || toBoolean(eval(env,Binary(Eq, lref, rref))))
+        }
+        case Ge => (eval(env, e1), eval(env, e2)) match
+        {
+          case (lref, rref) => B(toBoolean(eval(env, Binary(Gt, lref, rref))) || toBoolean(eval(env,Binary(Eq, lref, rref))))
+        }
+        case And => (eval(env, e1), eval(env, e2)) match
+        {
+          case _ => ???
+        }
+        case Or => (eval(env, e1), eval(env, e2)) match
+        {
+          case (lref, rref) => B(toBoolean(lref) || toBoolean(rref))
+          case _ => ???
+        }
+        case Seq => (eval(env, e1), eval(env, e2)) match
+        {
+          case _ => ???
+        }
+
 
       }
       case _ => ???
