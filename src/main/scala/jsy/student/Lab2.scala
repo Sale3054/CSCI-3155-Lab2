@@ -206,7 +206,6 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
           case (N(lref), rref) => N(lref)
           case (B(lref), rref) => B(lref || toBoolean(rref))
           case (lref, B(rref)) => B(toBoolean(lref) || rref)
-
           case (B(true), _) => B(true)
           case _ => ???
         }
@@ -217,7 +216,11 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         }
         case And => (eval(env, e1), eval(env, e2)) match
         {
-          case (N(lref), B(true)) => N(lref)
+          case (N(lref), B(true)) => N(1)
+          case (B(true), N(rref)) => N(1)
+          case (N(lref), B(false)) => N(0)
+          case (B(false), N(rref)) => N(0)
+
           case (B(lref), rref) => B(lref && toBoolean(rref))
           case (lref, B(rref)) => B(toBoolean(lref) && rref)
           case (lref, rref) => B(toBoolean(lref) && toBoolean(rref))
