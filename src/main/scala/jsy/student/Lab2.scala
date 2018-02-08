@@ -216,14 +216,17 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         }
         case And => (eval(env, e1), eval(env, e2)) match
         {
-          case (N(lref), B(true)) => N(1)
-          case (B(true), N(rref)) => N(1)
-          case (N(lref), B(false)) => N(0)
-          case (B(false), N(rref)) => N(0)
 
-          case (B(lref), rref) => B(lref && toBoolean(rref))
-          case (lref, B(rref)) => B(toBoolean(lref) && rref)
-          case (lref, rref) => B(toBoolean(lref) && toBoolean(rref))
+          case (N(lref) , N(rref)) => N(toNumber(B(toBoolean(N(rref)) && toBoolean(N(lref)))))
+          case (N(lref), B(true)) => N(lref)
+          case (N(lref), B(false)) => B(false)
+
+          case (B(true), B(false)) => B(false)
+          case (B(true), B(true)) => B(true)
+          case (B(true), N(rref)) => N(rref)
+          case (B(false), _) => B(false)
+          case (x, y) if toNumber(x).isNaN || toNumber(y).isNaN => N(Double.NaN)
+
           case _ => ???
         }
       }
