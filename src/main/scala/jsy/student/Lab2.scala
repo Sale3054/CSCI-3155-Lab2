@@ -194,27 +194,52 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         case Le => (eval(env, e1), eval(env, e2)) match
         {
           case (lref, rref) => B(toBoolean(eval(env, Binary(Lt, lref, rref))) || toBoolean(eval(env,Binary(Eq, lref, rref))))
+          case _=> ???
         }
         case Ge => (eval(env, e1), eval(env, e2)) match
         {
           case (lref, rref) => B(toBoolean(eval(env, Binary(Gt, lref, rref))) || toBoolean(eval(env,Binary(Eq, lref, rref))))
-        }
-        case And => (eval(env, e1), eval(env, e2)) match
-        {
           case _ => ???
         }
         case Or => (eval(env, e1), eval(env, e2)) match
         {
-          case (lref, rref) => B(toBoolean(lref) || toBoolean(rref))
+          case (N(lref), rref) => N(lref)
+          case (B(lref), rref) => B(lref || toBoolean(rref))
+          case (lref, B(rref)) => B(toBoolean(lref) || rref)
+
+          case (B(true), _) => B(true)
           case _ => ???
         }
         case Seq => (eval(env, e1), eval(env, e2)) match
         {
+          case (e1, e2) => e1; e2
           case _ => ???
         }
-
-
+        case And => (eval(env, e1), eval(env, e2)) match
+        {
+          case (N(lref), B(true)) => N(lref)
+          case (B(lref), rref) => B(lref && toBoolean(rref))
+          case (lref, B(rref)) => B(toBoolean(lref) && rref)
+          case (lref, rref) => B(toBoolean(lref) && toBoolean(rref))
+          case _ => ???
+        }
       }
+        /* Intraprocedural Control */
+      case If(e1, e2, e3) => (e1, e2, e3) match
+      {
+        case (B(true), e2, e3) => eval(env, e2)
+        case (B(false), e2, e3) => eval(env, e3)
+      }
+      case ConstDecl(x, e1, e2) => (x, e1, e2) match
+      {
+        case (x, e1, e2) => eval(extend(env,x,eval(env, e1)), e2)
+      }
+      case Var(x) => x match
+      {
+        case x => lookup(env, x)
+      }
+
+
       case _ => ???
     }
   }
