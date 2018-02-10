@@ -207,11 +207,15 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
           case (B(lref), rref) => B(lref || toBoolean(rref))
           case (lref, B(rref)) => B(toBoolean(lref) || rref)
           case (B(true), _) => B(true)
+          case (x, y) if toNumber(x).isNaN && toNumber(y).isNaN => N(Double.NaN)
+          case (x, y) if toNumber(x).isNaN && toBoolean(y) == false => N(0)
+          case (x, y) if toNumber(x) == 0 && toNumber(y).isNaN => N(Double.NaN)
           case _ => ???
         }
         case Seq => (eval(env, e1), eval(env, e2)) match
         {
           case (e1, e2) => e1; e2
+          case (x, y) if toNumber(x).isNaN || toNumber(y).isNaN => N(Double.NaN)
           case _ => ???
         }
         case And => (eval(env, e1), eval(env, e2)) match
@@ -226,15 +230,13 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
           case (B(true), N(rref)) => N(rref)
           case (B(false), _) => B(false)
           case (x, y) if toNumber(x).isNaN || toNumber(y).isNaN => N(Double.NaN)
-
-          case _ => ???
         }
       }
         /* Intraprocedural Control */
-      case If(e1, e2, e3) => (e1, e2, e3) match
+      case If(e1, e2, e3) => (toBoolean(eval(env, e1)), e2, e3) match
       {
-        case (B(true), e2, e3) => eval(env, e2)
-        case (B(false), e2, e3) => eval(env, e3)
+        case (true, lref, rref) => eval(env, lref)
+        case (false, lref, rref) => eval(env, rref)
       }
       case ConstDecl(x, e1, e2) => (x, e1, e2) match
       {
