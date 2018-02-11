@@ -58,15 +58,18 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
    * try ... catch { case ... => ... }
    */
 
+
   def toNumber(v: Expr): Double = {
     require(isValue(v))
     (v: @unchecked) match {
       case N(n) => n
       case Undefined => Double.NaN
+      case N(n) if n.isNaN => Double.NaN
       case null => +0
       case B(true) => 1
       case B(false) => 0
-      case S(s) => s.toDouble
+      case S(s) if s.isEmpty => 0
+      case S(s) => try {s.toDouble} catch {case e: NumberFormatException => Double.NaN}
       case _ => ???
     }
   }
@@ -77,9 +80,10 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
       case B(b) => b
       case Undefined => false
       case null => false
+      case S(s) if s.isEmpty => false
+      case S(s) if s.isEmpty == false => true
       case N(n) => n match {
         case 0 => false
-        case -0 => false
         case 0.0 => false
         case -0.0 => false
         case x if x.isNaN => false
@@ -93,6 +97,8 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     require(isValue(v))
     (v: @unchecked) match {
       case S(s) => s
+      case B(true) => "true"
+      case B(false) => "false"
       case Undefined => "undefined"
       case null => "null"
       case N(n) => n match {
@@ -103,11 +109,55 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         case -0.0 => "0"
         case n if n.isInfinity => "Infinity"
         case n if n < 0 => "-" + n.toString
+        case n if n.isWhole => n.toInt.toString
         case n => n.toString
       }
       case _ => ???
     }
   }
+
+  def absRelational(px: Expr, py: Expr): Expr = {
+    require(isValue(px), isValue(py))
+    (px: @unchecked, py: @unchecked) match
+    {
+      case(S(px), S(py)) => B(px < py)
+      case(px, py) => (toNumber(px),toNumber(py)) match
+      {
+        case (nx, ny) if nx.isNaN || ny.isNaN => Undefined
+        case (nx, ny) if nx == ny => B(false)
+        case (nx, ny) if nx == +0 && ny == -0 => B(false)
+        case (nx, ny) if nx == -0 && ny == +0 => B(false)
+        case (Double.PositiveInfinity, _) => B(false)
+        case (_, Double.PositiveInfinity) => B(true)
+        case (Double.NegativeInfinity, _) => B(true)
+        case (_, Double.NegativeInfinity) => B(false)
+        case (nx, ny) => B(nx < ny)
+      }
+    }
+  }
+  def strictEqualityComparison(x: Expr, y: Expr): Expr = {
+    require(isValue(x), isValue(y))
+    (x: @unchecked, y: @unchecked) match
+    {
+      case (Undefined, Undefined) => B(true)
+      case (null, null) => B(true)
+      case (N(lref), N(rref)) => (lref, rref) match
+      {
+        case(Double.NaN, _) => B(false)
+        case(_, Double.NaN) => B(false)
+        case(lref, rref) if lref == rref => B(true)
+        case(lref, rref) if lref == +0 && rref == -0 => B(true)
+        case(lref, rref) if lref == -0 && rref == +0 => B(true)
+        case(_,_) => B(false)
+      }
+      case (S(lref), S(rref)) => B(lref == rref)
+      case (B(true), B(true)) => B(true)
+      case (B(false), B(false)) => B(true)
+      case (B(_), B(_)) => B(false)
+      case _ => B(false)
+    }
+  }
+
 
   def eval(env: Env, e: Expr): Expr = {
     e match {
@@ -131,21 +181,13 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
       case Binary(bop, e1, e2) => bop match{
         case Plus => (eval(env, e1), eval(env, e2)) match
         {
-
-          case (N(lref), N(rref)) => N(lref + rref)
           case (S(lref), rref) => S(lref + toStr(rref))
           case (lref, S(rref)) => S(toStr(lref) + rref)
-          case (S(lref), S(rref)) => S(lref + rref)
           case (lref, rref) => N(toNumber(lref) + toNumber(rref))
-          case _ => throw new UnsupportedOperationException("Uncaught operation exception in: Plus()")
         }
         case Minus => (eval(env, e1), eval(env, e2)) match
         {
-          case (N(lref), N(rref)) => N(lref - rref)
-          case (S(lref), rref) => N(Double.NaN)
-          case (lref, S(rref)) => N(Double.NaN)
           case (lref, rref) => N(toNumber(lref) - toNumber(rref))
-          case _ => throw new UnsupportedOperationException("Uncaught operation exception in: Minus()")
         }
         case Times => (eval(env, e1), eval(env, e2)) match
         {
@@ -153,25 +195,23 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
           case (N(lref), rref) => N(lref * toNumber(rref))
           case (lref, N(rref)) => N(toNumber(lref) * rref)
           case (lref, rref) => N(toNumber(lref) * toNumber(rref))
+          case (x, y) if toNumber(x).isNaN || toNumber(y).isNaN => N(Double.NaN)
           case _ => throw new UnsupportedOperationException("Uncaught operation exception in: Times()")
         }
         case Div => (eval(env, e1), eval(env, e2)) match
         {
           case (N(lref), N(rref)) => N(lref / rref)
           case (lref, rref) => N(toNumber(lref) / toNumber(rref))
+          case (x, y) if toNumber(x).isNaN || toNumber(y).isNaN => N(Double.NaN)
+          case (Undefined, y) => N(Double.NaN)
+          case (x, Undefined) => N(Double.NaN)
+          case (Undefined, Undefined) => N(Double.NaN)
           case _ => ???
         }
 
         case Eq => (eval(env, e1), eval(env, e2)) match
         {
-          case (N(lref), N(rref)) => B(lref == rref)
-          case (N(lref), rref) => B(lref == toNumber(rref))
-          case (lref, N(rref)) => B(toNumber(lref) == rref)
-          case (B(lref), B(rref)) => B(lref == rref)
-          case (B(lref), rref) => B(lref == toBoolean(rref))
-          case (lref, B(rref)) => B(toBoolean(lref) == rref)
-          case (lref, rref) => B(toBoolean(lref) == toBoolean(rref))
-          case _ => ???
+          case(lref, rref) => strictEqualityComparison(lref, rref)
         }
         case Ne => (eval(env, e1), eval(env, e2)) match
         {
@@ -179,38 +219,43 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         }
         case Lt => (eval(env, e1), eval(env, e2)) match
         {
-          case (N(lref), N(rref)) => B(lref < rref)
-          case (N(lref), rref) => B(lref < toNumber(rref))
-          case (lref, N(rref)) => B(toNumber(lref) < rref)
-          case (lref, rref) => B(toNumber(lref) < toNumber(rref))
-
-          case _ => ???
+          case (lref, rref) => absRelational(lref, rref) match
+          {
+            case Undefined => B(false)
+            case r => r
+          }
         }
         case Gt => (eval(env, e1), eval(env, e2)) match
         {
-          case (lref, rref) => B(toBoolean(eval(env, Unary(Not, Binary(Lt, lref, rref)))) && toBoolean(eval(env, Unary(Not, Binary(Eq, lref, rref)))))
-          case _ => ???
+          case (lref, rref) => absRelational(rref, lref) match
+          {
+            case Undefined => B(false)
+            case r => r
+          }
         }
         case Le => (eval(env, e1), eval(env, e2)) match
         {
-          case (lref, rref) => B(toBoolean(eval(env, Binary(Lt, lref, rref))) || toBoolean(eval(env,Binary(Eq, lref, rref))))
+          case (lref, rref) => absRelational(rref, lref) match
+          {
+            case B(true) => B(false)
+            case Undefined => B(false)
+            case _ => B(true)
+          }
           case _=> ???
         }
         case Ge => (eval(env, e1), eval(env, e2)) match
         {
-          case (lref, rref) => B(toBoolean(eval(env, Binary(Gt, lref, rref))) || toBoolean(eval(env,Binary(Eq, lref, rref))))
-          case _ => ???
+          case (lref, rref) => absRelational(lref, rref) match
+          {
+            case B(true) => B(false)
+            case Undefined => B(false)
+            case _ => B(true)
+          }
         }
         case Or => (eval(env, e1), eval(env, e2)) match
         {
-          case (N(lref), rref) => N(lref)
-          case (B(lref), rref) => B(lref || toBoolean(rref))
-          case (lref, B(rref)) => B(toBoolean(lref) || rref)
-          case (B(true), _) => B(true)
-          case (x, y) if toNumber(x).isNaN && toNumber(y).isNaN => N(Double.NaN)
-          case (x, y) if toNumber(x).isNaN && toBoolean(y) == false => N(0)
-          case (x, y) if toNumber(x) == 0 && toNumber(y).isNaN => N(Double.NaN)
-          case _ => ???
+          case (lref, rref) if toBoolean(lref) == true => lref
+          case (lref, rref) if toBoolean(lref) == false => rref
         }
         case Seq => (eval(env, e1), eval(env, e2)) match
         {
@@ -220,16 +265,9 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         }
         case And => (eval(env, e1), eval(env, e2)) match
         {
-
-          case (N(lref) , N(rref)) => N(toNumber(B(toBoolean(N(rref)) && toBoolean(N(lref)))))
-          case (N(lref), B(true)) => N(lref)
-          case (N(lref), B(false)) => B(false)
-
-          case (B(true), B(false)) => B(false)
-          case (B(true), B(true)) => B(true)
-          case (B(true), N(rref)) => N(rref)
-          case (B(false), _) => B(false)
-          case (x, y) if toNumber(x).isNaN || toNumber(y).isNaN => N(Double.NaN)
+          case (lref, rref) if toBoolean(lref) == false => lref
+          case (lref, rref) if toBoolean(lref) == true && toBoolean(rref) == false => rref
+          case (lref, rref) if toBoolean(lref) == true && toBoolean(rref) == true => rref
         }
       }
         /* Intraprocedural Control */
@@ -244,6 +282,7 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
       }
       case Var(x) => x match
       {
+        case "Infinity" => N(Double.PositiveInfinity)
         case x => lookup(env, x)
       }
 
