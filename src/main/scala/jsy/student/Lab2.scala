@@ -143,8 +143,8 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
       case (null, null) => B(true)
       case (N(lref), N(rref)) => (lref, rref) match
       {
-        case(Double.NaN, _) => B(false)
-        case(_, Double.NaN) => B(false)
+        case(lref, _) if lref.isNaN => B(false)
+        case(_, rref) if rref.isNaN => B(false)
         case(lref, rref) if lref == rref => B(true)
         case(lref, rref) if lref == +0 && rref == -0 => B(true)
         case(lref, rref) if lref == -0 && rref == +0 => B(true)
@@ -266,8 +266,8 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         case And => (eval(env, e1), e2) match
         {
           case (lref, rref) if toBoolean(lref) == false => lref
-          case (lref, rref) if toBoolean(lref) == true && toBoolean(eval(env, rref)) == false => eval(env, rref)
-          case (lref, rref) if toBoolean(lref) == true && toBoolean(eval(env, rref)) == true => eval(env, rref)
+          case (lref, rref) if toBoolean(lref) == true  => eval(env, rref)
+
         }
       }
         /* Intraprocedural Control */
