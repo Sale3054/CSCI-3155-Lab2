@@ -252,10 +252,10 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
             case _ => B(true)
           }
         }
-        case Or => (eval(env, e1), eval(env, e2)) match
+        case Or => (eval(env, e1), e2) match
         {
           case (lref, rref) if toBoolean(lref) == true => lref
-          case (lref, rref) if toBoolean(lref) == false => rref
+          case (lref, rref) if toBoolean(lref) == false => eval(env, rref)
         }
         case Seq => (eval(env, e1), eval(env, e2)) match
         {
@@ -263,11 +263,11 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
           case (x, y) if toNumber(x).isNaN || toNumber(y).isNaN => N(Double.NaN)
           case _ => ???
         }
-        case And => (eval(env, e1), eval(env, e2)) match
+        case And => (eval(env, e1), e2) match
         {
           case (lref, rref) if toBoolean(lref) == false => lref
-          case (lref, rref) if toBoolean(lref) == true && toBoolean(rref) == false => rref
-          case (lref, rref) if toBoolean(lref) == true && toBoolean(rref) == true => rref
+          case (lref, rref) if toBoolean(lref) == true && toBoolean(eval(env, rref)) == false => eval(env, rref)
+          case (lref, rref) if toBoolean(lref) == true && toBoolean(eval(env, rref)) == true => eval(env, rref)
         }
       }
         /* Intraprocedural Control */
